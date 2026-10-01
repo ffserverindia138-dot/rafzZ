@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dana redem/penarikan</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f2f5f9;font-family:Arial,sans-serif;color:#182230}.app{max-width:430px;margin:auto;min-height:100vh;background:#fff}.head{background:#1687ff;color:#fff;padding:22px 18px 30px;border-radius:0 0 25px 25px}.tag{font-size:10px;font-weight:bold;background:#ffd83d;color:#222;padding:5px 8px;border-radius:20px}.head h1{margin:12px 0 5px;font-size:25px}.small{font-size:12px;opacity:.85}.card{margin:-15px 15px 15px;background:white;border-radius:18px;padding:17px;box-shadow:0 5px 22px #0001}.label{font-size:12px;color:#667085;margin-bottom:6px}input{width:100%;padding:13px;border:1px solid #d8dee9;border-radius:11px;font-size:15px;margin-bottom:9px}button{border:0;border-radius:11px;padding:13px;font-weight:bold;font-size:14px}.blue{background:#1687ff;color:white;width:100%}.light{background:#eaf3ff;color:#0874e8;width:100%}.balance{font-size:29px;font-weight:800;color:#1687ff;margin:5px 0 14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.section{padding:0 15px 15px}.section h2{font-size:17px}.box{border:1px solid #e1e6ed;border-radius:14px;padding:13px}.notice{margin-top:10px;padding:10px;border-radius:10px;background:#fff8dc;color:#705c00;font-size:11px}.tx{display:flex;justify-content:space-between;border-bottom:1px solid #edf0f4;padding:11px 0;font-size:13px}.tx:last-child{border:0}.muted{font-size:11px;color:#7b8492}.green{color:#079957}.red{color:#d84b4b}.modal{position:fixed;inset:0;background:#0008;display:none;align-items:flex-end}.modal.show{display:flex}.sheet{width:min(430px,100%);background:#fff;padding:20px;border-radius:22px 22px 0 0}.close{float:right;background:#eee}.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#182230;color:#fff;padding:12px 16px;border-radius:12px;font-size:12px;display:none;z-index:5;width:max-content;max-width:90%;text-align:center}.footer{text-align:center;color:#8a94a6;font-size:10px;padding:18px}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="head">
+<span class="tag">SIMULASI RafZzzX</span>
+<h1>DANA generator</h1>
+<div class="small">Semua saldo dan transaksi di halaman ini.</div>
+</header>
+
+<div class="card">
+<div class="label">Nama pengguna</div>
+<input id="name" placeholder="Masukkan nama">
+<button class="blue" onclick="saveName()">Simpan Nama</button>
+</div>
+
+<div class="card">
+<div class="label">Saldo simulasi</div>
+<div class="balance" id="balance">Rp0</div>
+<div class="grid">
+<button class="light" onclick="bonus()">Dana Berhasil +Rp5.000</button>
+<button class="light" onclick="openWithdraw()">Penarikan</button>
+</div>
+<div style="height:9px"></div>
+<button class="blue" onclick="openRefund()">Pengembalian Dana</button>
+<div class="notice">Bonus dana berhasil dibatasi 2 kali setiap 5 jam.</div>
+</div>
+
+<div class="section">
+<h2>🎁 Kode Redeem</h2>
+<div class="box">
+<div class="muted">Masukkan salah satu kode berikut.</div><br>
+<input id="code" placeholder="Kode redeem">
+<button class="blue" onclick="redeem()">Redeem</button>
+</div>
+</div>
+
+<div class="section">
+<h2>📲 Misi WhatsApp</h2>
+<div class="box">
+<div><b>Misi: Bagikan ke WhatsApp</b></div>
+<div class="muted" style="margin:6px 0 10px">Bagikan pesan simulasi untuk mendapatkan bonus Rp5.000.</div>
+<button class="light" onclick="shareWA()">Bagikan ke WhatsApp</button>
+<div class="notice">Bonus misi diberikan maksimal 1 kali pada browser ini.</div>
+</div>
+</div>
+
+<div class="section">
+<h2>🔔 Riwayat & Notifikasi</h2>
+<div class="box" id="history"><div class="muted">Belum ada aktivitas.</div></div>
+</div>
+
+<div class="footer">DANA Simulator • Fiktif • Tidak memproses uang sungguhan</div>
+</div>
+
+<div class="modal" id="withdrawModal">
+<div class="sheet">
+<button class="close" onclick="closeModal('withdrawModal')">✕</button>
+<h2>Penarikan Dana</h2>
+<div class="muted">Maksimal penarikan: Rp50.000 (simulasi)</div><br>
+<input id="withdraw" type="number" placeholder="Nominal penarikan">
+<button class="blue" onclick="withdraw()">Konfirmasi Penarikan</button>
+</div>
+</div>
+
+<div class="modal" id="refundModal">
+<div class="sheet">
+<button class="close" onclick="closeModal('refundModal')">✕</button>
+<h2>Pengembalian Dana</h2>
+<div class="muted">Masukkan nominal pengembalian dana simulasi.</div><br>
+<input id="refund" type="number" placeholder="Nominal pengembalian">
+<button class="blue" onclick="refund()">Proses Pengembalian</button>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const codes={
+"DANA100":10000,"DANA200":10000,"DANA500":5000,"BONUS10K":10000,
+"REZEKI5K":5000,"PRANK10K":10000,"HADIAH20K":20000,"CUAN5K":5000,
+"BONUS20K":20000,"DANA50K":50000
+};
+let balance=+localStorage.getItem("bal")||0;
+let name=localStorage.getItem("name")||"";
+let used=JSON.parse(localStorage.getItem("used")||"[]");
+let bonusTimes=JSON.parse(localStorage.getItem("bonusTimes")||"[]");
+let mission=localStorage.getItem("mission")==="1";
+let history=JSON.parse(localStorage.getItem("history")||"[]");
+document.getElementById("name").value=name;
+
+function rupiah(n){return new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(n)}
+function save(){localStorage.setItem("bal",balance);localStorage.setItem("name",name);localStorage.setItem("used",JSON.stringify(used));localStorage.setItem("bonusTimes",JSON.stringify(bonusTimes));localStorage.setItem("mission",mission?"1":"0");localStorage.setItem("history",JSON.stringify(history))}
+function toast(x){let t=document.getElementById("toast");t.textContent=x;t.style.display="block";setTimeout(()=>t.style.display="none",2400)}
+function render(){
+ document.getElementById("balance").textContent=rupiah(balance);
+ let h=document.getElementById("history");
+ h.innerHTML=history.length?history.map(x=>`<div class="tx"><div><b>${x.t}</b><div class="muted">${x.d}</div></div><b class="${x.c}">${x.a}</b></div>`).join(""):'<div class="muted">Belum ada aktivitas.</div>';
+}
+function addHistory(t,a,c="green"){history.unshift({t,a,c,d:new Date().toLocaleString("id-ID")});if(history.length>20)history.pop();save();render()}
+function saveName(){name=document.getElementById("name").value.trim()||"Pengguna";save();toast("Nama berhasil disimpan.");addHistory("Nama pengguna disimpan","✓","green")}
+function bonus(){
+ let now=Date.now(),five=5*60*60*1000;
+ bonusTimes=bonusTimes.filter(x=>now-x<five);
+ if(bonusTimes.length>=2){toast("Batas bonus tercapai: 2 kali dalam 5 jam.");return}
+ bonusTimes.push(now);balance+=5000;save();render();addHistory("Dana berhasil (simulasi)","+Rp5.000");toast("Notifikasi: dana berhasil Rp5.000 (simulasi).");
+}
+function openWithdraw(){document.getElementById("withdrawModal").classList.add("show")}
+function openRefund(){document.getElementById("refundModal").classList.add("show")}
+function closeModal(id){document.getElementById(id).classList.remove("show")}
+function withdraw(){
+ let n=+document.getElementById("withdraw").value;
+ if(n<1){toast("Masukkan nominal.");return}
+ if(n>50000){toast("Batas penarikan hanya Rp50.000.");return}
+ if(n>balance){toast("Saldo simulasi tidak cukup.");return}
+ balance-=n;save();render();addHistory("Penarikan dana (simulasi)","-"+rupiah(n),"red");closeModal("withdrawModal");toast("Penarikan berhasil (SIMULASI).");
+}
+function refund(){
+ let n=+document.getElementById("refund").value;
+ if(n<1){toast("Masukkan nominal.");return}
+ balance+=n;save();render();addHistory("Pengembalian dana (simulasi)","+"+rupiah(n));closeModal("refundModal");toast("Pengembalian dana berhasil (SIMULASI).");
+}
+function redeem(){
+ let c=document.getElementById("code").value.trim().toUpperCase();
+ if(!(c in codes)){toast("Kode redeem tidak valid.");return}
+ if(used.includes(c)){toast("Kode sudah digunakan.");return}
+ used.push(c);balance+=codes[c];save();render();addHistory("Redeem "+c,"+"+rupiah(codes[c]));document.getElementById("code").value="";toast("Redeem berhasil (SIMULASI).");
+}
+function shareWA(){
+ let msg=encodeURIComponent("🎁 Aku menemukan DANA Simulator! Coba buka dan lihat misi/prank ini 😆");
+ window.open("https://wa.me/?text="+msg,"_blank");
+ if(!mission){mission=true;balance+=5000;save();render();addHistory("Bonus misi WhatsApp (simulasi)","+Rp5.000");toast("Misi selesai! Bonus Rp5.000 (SIMULASI).")}
+ else toast("Misi WhatsApp sudah pernah diselesaikan.");
+}
+render();
+</script>
+</body>
+</html>
